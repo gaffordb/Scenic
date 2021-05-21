@@ -1,8 +1,8 @@
 from scenic.simulators.lgsvl.simulator import LGSVLSimulator
-from scenic.simulators.lgsvl.map import setMapPath
-setMapPath(__file__, 'maps/borregasave.xodr')
-from scenic.simulators.lgsvl.model import *
-from scenic.simulators.lgsvl.behaviors import *
+#from scenic.simulators.lgsvl.map import setMapPath
+#setMapPath(__file__, 'maps/borregasave.xodr')
+#from scenic.simulators.lgsvl.model import *
+#from scenic.simulators.lgsvl.behaviors import *
 import matplotlib.pyplot as plt
 simulator LGSVLSimulator('BorregasAve')
 param time_step = 1.0/10
@@ -59,17 +59,18 @@ behavior actorCarBehavior(target_speed, trajectory, brake):
 
 # PLACEMENT
 # Cars blocking view
-stopped1 = NPCCar following roadDirection from pos1 by -dist1
-stopped2 = NPCCar following roadDirection from pos2 by -dist2
+stopped1 = NPCCar following roadDirection from pos1 for dist1
+stopped1 = NPCCar following roadDirection from pos1 for dist1
+stopped2 = following NPCCar roadDirection from pos2 for -dist2
 
 # Uber
-ego = Car following roadDirection from egoPos by -egoDist,
+ego = following Car roadDirection from egoPos for -egoDist,
 	with speed uberSpeed,
 	with behavior FollowTrajectoryBehavior(target_speed=uberSpeed, trajectory=egoTrajectory)
 
 #assert (ego is right of stopped1)
 
 # Turning Car
-actor = Car following roadDirection from actorPos by -actorDist,
+actor = Car following roadDirection from actorPos for -actorDist,
 	with behavior actorCarBehavior(target_speed = turnSpeed, trajectory = actorTrajectory, brake = brakeIntensity),
 	with speed turnSpeed

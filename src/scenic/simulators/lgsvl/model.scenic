@@ -53,7 +53,7 @@ class Vehicle(Vehicle, LGSVLObject):
     pass
 
 class EgoCar(Vehicle, Steers):
-    lgsvlName: 'Lincoln2017MKZ (Apollo 5.0)'
+    lgsvlName: '2e9095fa-c9b9-4f3f-8d7d-65fa2bb03921'
     lgsvlAgentType: EGO_TYPE
 
     def __init__(self, *args, **kwargs):
@@ -86,10 +86,11 @@ class EgoCar(Vehicle, Steers):
 (Car) = (EgoCar)
 
 class ApolloCar(EgoCar):
-    lgsvlName: 'Lincoln2017MKZ (Apollo 5.0)'
-    apolloVehicle: 'Lincoln2017MKZ'
+    lgsvlName: '2e9095fa-c9b9-4f3f-8d7d-65fa2bb03921'
+    lgsvlAgentType: EGO_TYPE
+    apolloVehicle: 'Lincoln2017MKZ_LGSVL'
     apolloModules: ['Localization', 'Perception', 'Transform', 'Routing',
-                    'Prediction', 'Planning', 'Camera']
+                    'Prediction', 'Planning']
     bridgeHost: 'localhost'
     bridgePort: 9090
 

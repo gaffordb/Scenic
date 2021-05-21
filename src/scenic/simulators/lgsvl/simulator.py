@@ -101,43 +101,50 @@ class LGSVLSimulation(simulators.Simulation):
         lgsvlObj.connect_bridge(obj.bridgeHost, obj.bridgePort)
 
         # set up connection and map/vehicle configuration
-        import dreamview
-        dv = dreamview.Connection(self.client, lgsvlObj)
+        dv = lgsvl.dreamview.Connection(self.client, lgsvlObj, obj.bridgeHost)
         obj.dreamview = dv
         waitToStabilize = False
         hdMap = self.scene.params['apolloHDMap']
-        if dv.getCurrentMap() != hdMap:
-            dv.setHDMap(hdMap)
+        if dv.get_current_map() != hdMap:
+            dv.set_hd_map(hdMap)
             waitToStabilize = True
-        if dv.getCurrentVehicle() != obj.apolloVehicle:
-            dv.setVehicle(obj.apolloVehicle)
+        if dv.get_current_vehicle() != obj.apolloVehicle:
+            dv.set_vehicle(obj.apolloVehicle)
             waitToStabilize = True
         
         verbosePrint('Initializing Apollo...')
-
+        #destination =  self.client.get_spawn()[0]
+        #dv.setup_apollo(destination.position.x, destination.position.z, obj.apolloModules)
         # stop the car to cancel buffered speed from previous simulations
         cntrl = lgsvl.VehicleControl()
         cntrl.throttle = 0.0
         lgsvlObj.apply_control(cntrl, True)
         # start modules
-        dv.disableModule('Control')
-        ready = dv.getModuleStatus()
+        dv.disable_module('Control')
+        ready = dv.get_module_status()
+
         for module in obj.apolloModules:
             if not ready[module]:
-                dv.enableModule(module)
+                print('trying to enable module ', module)
+                dv.enable_module(module)
                 verbosePrint(f'Module {module} is not ready...')
                 waitToStabilize = True
         while True:
-            ready = dv.getModuleStatus()
+            ready = dv.get_module_status()
+            readies = []
             if all(ready[module] for module in obj.apolloModules):
+                break
+            else:
+                for module in obj.apolloModules:
+                    print(module + " => " + str(ready[module]))
                 break
 
         # wait for Apollo to stabilize, if needed
         if waitToStabilize:
             verbosePrint('Waiting for Apollo to stabilize...')
-            self.client.run(25)
-        dv.enableModule('Control')
-        self.client.run(15)
+            self.client.run(3)
+        dv.enable_module('Control')
+        self.client.run(10)
         verbosePrint('Initialized Apollo.')
 
     def executeActions(self, allActions):
