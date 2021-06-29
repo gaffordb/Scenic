@@ -55,6 +55,8 @@ class LGSVLSimulation(simulators.Simulation):
         elevation = obj.elevation
         if elevation is None:
             elevation = self.groundElevationAt(obj.position)
+
+        # MODIFIED state.transform.position = utils.scenicToLGSVLPosition(obj.position, elevation)
         state.transform.position = utils.scenicToLGSVLPosition(obj.position, elevation)
         state.transform.rotation = utils.scenicToLGSVLRotation(obj.heading)
 
@@ -121,6 +123,8 @@ class LGSVLSimulation(simulators.Simulation):
         lgsvlObj.apply_control(cntrl, True)
         # start modules
         dv.disable_module('Control')
+
+
         ready = dv.get_module_status()
 
         for module in obj.apolloModules:
@@ -144,8 +148,13 @@ class LGSVLSimulation(simulators.Simulation):
             verbosePrint('Waiting for Apollo to stabilize...')
             self.client.run(3)
         dv.enable_module('Control')
-        self.client.run(10)
+        self.client.run(3)
         verbosePrint('Initialized Apollo.')
+        dv.disable_module('Planning')
+        dv.disable_module('Routing')
+        self.client.run(1)
+        dv.enable_module('Planning')
+        dv.enable_module('Routing')
 
     def executeActions(self, allActions):
         super().executeActions(allActions)

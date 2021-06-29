@@ -2,7 +2,8 @@
 
 param map = localPath('maps/cubetown.xodr')
 param lgsvl_map = 'CubeTown'
-param time_step = 1.0/10
+param apolloHDMap = 'CubeTown'
+param time_step = 1.0
 
 model scenic.simulators.lgsvl.model
 
@@ -37,11 +38,12 @@ behavior EgoBehavior(thresholdDistance, target_speed=20, trajectory = None):
 	interrupt when distanceToAnyCars(car=self, thresholdDistance=thresholdDistance):
 		take SetBrakeAction(brakeIntensity)
 
+egoDestination = OrientedPoint on ego_maneuver.endLane
 
 # PLACEMENT
-ego = Car following roadDirection from egoStart by -Uniform(*space),
-		with blueprint 'vehicle.tesla.model3',
-		with behavior EgoBehavior(target_speed=10, trajectory=ego_L_centerlines, thresholdDistance = 20)
+ego = ApolloCar following roadDirection from egoStart by -Uniform(*space), 
+	with behavior DriveTo(egoDestination)
+
 
 other = Car following roadDirection from actorStart by -Uniform(*space),
 		with blueprint 'vehicle.tesla.model3',
