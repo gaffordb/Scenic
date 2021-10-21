@@ -2,12 +2,10 @@
 # Definition: Ego-vehicle needs to negotiate with other vehicles to cross an unsignalized intersection. In this situation it is assumed that the first to enter the intersection has priority. 
 # actor arrives at 4 way intersection before ego, has right of way. crosses intersection before ego.
 
-# param map = localPath('maps/borregasave.xodr')
-# param lgsvl_map = 'BorregasAve'
-
-param map = localPath('../carla/OpenDrive/Town03.xodr')
-param carla_map = 'Town03'
-param time_step = 1.0/10
+param map = localPath('maps/borregasave.xodr')
+param lgsvl_map = 'BorregasAve'
+param apolloHDMap = 'borregas_ave'
+param time_step = 1.0
 
 model scenic.simulators.lgsvl.model
 
@@ -25,19 +23,17 @@ randomType = Uniform(*[ManeuverType.STRAIGHT, ManeuverType.LEFT_TURN, ManeuverTy
 conflicting_maneuvers = filter(lambda  m: m.type == ManeuverType.LEFT_TURN, egoManeuver.conflictingManeuvers) # hard coded. should be m.type == randomType
 actorTurn = Uniform(*conflicting_maneuvers)
 
-
 egoAtStop = False
-
 
 # GEOMETRY
 lane1 = egoManeuver.startLane
 lane2 = actorTurn.startLane
 
-lines1 = [egoManeuver.startLane.centerline, egoManeuver.connectingLane.centerline, egoManeuver.endLane.centerline]
-lines2 = [actorTurn.startLane.centerline, actorTurn.connectingLane.centerline, actorTurn.endLane.centerline]
+lines1 = [egoManeuver.startLane, egoManeuver.connectingLane, egoManeuver.endLane]
+lines2 = [actorTurn.startLane, actorTurn.connectingLane, actorTurn.endLane]
 
-egoTrajectory = [egoManeuver.connectingLane.centerline, egoManeuver.endLane.centerline]
-actorTrajectory = [actorTurn.connectingLane.centerline, actorTurn.endLane.centerline]
+egoTrajectory = [egoManeuver.connectingLane, egoManeuver.endLane]
+actorTrajectory = [actorTurn.connectingLane, actorTurn.endLane]
 
 pos1 = (OrientedPoint at lane1.centerline[-1]) offset by Range(-2, 2) @ 0 
 pos2 = (OrientedPoint at lane2.centerline[-1]) offset by Range(-2, 2) @ 0
@@ -87,18 +83,16 @@ behavior actorCarBehavior(egoAtStop):
 			print("ego at stop point")
 		
 
-
 behavior chickenBehavior(target_speed=20, trajectory = actorTrajectory):
 	assert trajectory is not None
 	brakeIntensity = Range(0.6, 0.8)
 
 	try: 
-		do FollowTrajectoryBehavior(target_speed=15, trajectory=trajectory)
+		do FollowTrajectoryBehavior(target_speed=15, trajectory=actorTrajectory) #unclear if this should be lines or actorTraj... TODO
 	
 	interrupt when ((ego.speed < 0.2) or ((distance from actorCar to ego) <= 7)): # actor starts when ego starts, stops when ego stops.
 		print("interrupted")
 		take SetReverseAction(False), SetThrottleAction(0.0), SetBrakeAction(brakeIntensity)
-
 
 behavior neverMoveBehavior():
 	while True:
@@ -112,7 +106,7 @@ behavior conflictingStopBehavior(target_speed=20, trajectory = actorTrajectory):
 	brakeIntensity = Range(0.6, 0.8)
 
 	try: 
-		do FollowTrajectoryBehavior(target_speed=15, trajectory=trajectory)
+		do FollowTrajectoryBehavior(target_speed=15, trajectory=actorTrajectory) # unclear if this should be lines or actorTraj... TODO
 	
 	interrupt when ((distance from ego to actorCar) <= randomDist):
 		print("interrupted")
@@ -135,11 +129,12 @@ PossibleBehaviors = [neverMoveBehavior, turnBehavior, conflictingStopBehavior, c
 #PossibleBehaviors = [chickenBehavior]
 
 # PLACEMENT
-ego = Car following roadDirection from pos1 by -egoDist,
+ego = ApolloCar following roadDirection from pos1 by -egoDist,
 	with behavior EgoBehavior(target_speed=15, trajectory=lines1)
 
 actorCar = Car following roadDirection from pos2 by -actorDist,
-	with behavior actorCarBehavior(egoAtStop)
+	#with behavior actorCarBehavior(egoAtStop)
+	with behavior Uniform(*PossibleBehaviors)
 
 terminate when ego in egoManeuver.endLane
 terminate when actorCar in actorTurn.endLane

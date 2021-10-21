@@ -2,6 +2,7 @@
 
 from scenic.domains.driving.model import *
 from scenic.simulators.lgsvl.behaviors import *
+import scenic.syntax.veneer as veneer
 
 try:
     import lgsvl
@@ -81,6 +82,8 @@ class EgoCar(Vehicle, Steers):
 
     def setReverse(self, reverse):
         self.control.reverse = reverse
+    #def _getClosestTrafficLight(self, distance=100):
+    #    return _getClosestTrafficLight(self, distance)
 
 # A plain Car is an EgoCar so that the Steers protocol is supported
 (Car) = (EgoCar)
@@ -115,3 +118,9 @@ class Pedestrian(Pedestrian, LGSVLObject, Walks):
 class Waypoint(OrientedPoint):
     heading: roadDirection at self.position
     speed: 10
+
+def setAllIntersectionTrafficLightsGreen():
+    control_policy = "green=60;yellow=1.5;red=2;loop"
+    for controllable in simulator().get_controllables():
+        if controllable.type == 'signal':
+            controllable.control(control_policy)

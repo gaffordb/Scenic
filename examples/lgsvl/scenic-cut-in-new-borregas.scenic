@@ -1,11 +1,9 @@
-
-param map = localPath('maps/Straight2LaneSame.xodr')
-param lgsvl_map = 'Straight2LaneSame'
-param apolloHDMap = 'Straight2LaneSame'
-param time_step = 1
+param map = localPath('maps/borregasave.xodr')
+param lgsvl_map = 'BorregasAve'
+param apolloHDMap = 'borregas_ave'
+param time_step = 1.0
 
 model scenic.simulators.lgsvl.model
-
 
 egoStartPos = OrientedPoint on road
 egoDestination = follow roadDirection from egoStartPos for 100
@@ -34,6 +32,8 @@ npc = NPCCar at npcStartPos,
           with behavior FollowWaypoints(waypoints)
 
 # Require NPC to be headed approximately the same way as the ego
-require abs(relative heading of npc) <= 20 deg
+#require abs(relative heading of npc) <= 20 deg
+
+
 
 #require distance egoStartPos to egoDestination > 30

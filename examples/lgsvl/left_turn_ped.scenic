@@ -1,3 +1,4 @@
+# TODO NOTE: Pedestrian stuff is kinda junked up
 
 param map = localPath('maps/borregasave.xodr')
 param lgsvl_map = 'BorregasAve'
@@ -6,7 +7,13 @@ param time_step = 1
 
 model scenic.simulators.lgsvl.model
 
+PEDESTRIAN_MIN_SPEED = 1
+THRESHOLD = 17
 fourWayIntersection = filter(lambda i: i, network.intersections)
+
+behavior PedestrianBehavior(min_speed=1, threshold=10, waypoints=[]):
+    #do CrossingBehavior(ego, min_speed, threshold)
+    take FollowWaypointsAction(waypoints)
 
 intersec = Uniform(*fourWayIntersection)
 ego_startLane = Uniform(*intersec.incomingLanes)
@@ -22,12 +29,19 @@ egoStartPos = OrientedPoint on ego_maneuver.startLane.centerline
 # Note: Precedence for > is tighter than `distance from`?
 require (distance from egoStartPos to ego_maneuver.startLane.centerline[-1]) > 5
 
-
 egoDestination = OrientedPoint on ego_maneuver.endLane
 require egoDestination in road
 
-# setAllIntersectionTrafficLightsGreen()
+ped_start = OrientedPoint on ego_maneuver.endLane
+
+require (distance from ped_start to ego_maneuver.endLane.centerline[1]) < 2
+
+ped_head =  (90 deg) relative to egoDestination.heading
+wayp = [Waypoint following roadDirection from ped_start for 1, with speed(Range(5,8))]
 
 ego = ApolloCar at egoStartPos,
-    with behavior DriveTo(egoDestination)
-
+             with behavior DriveTo(egoDestination)
+ped = Pedestrian at ped_start,
+    with regionContainedIn ego_maneuver.endLane,
+    with heading ped_head,
+    with behavior FollowWaypoints(wayp)

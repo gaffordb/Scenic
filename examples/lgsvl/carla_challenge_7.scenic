@@ -3,7 +3,8 @@
 
 param map = localPath('maps/borregasave.xodr')
 param lgsvl_map = 'BorregasAve'
-param time_step = 1.0/10
+param apolloHDMap = 'borregas_ave'
+param time_step = 1.0
 
 model scenic.simulators.lgsvl.model
 
@@ -29,16 +30,14 @@ require len(filter(lambda m: m.type == ManeuverType.STRAIGHT, lane1.maneuvers)) 
 pos1 = (OrientedPoint at lane1.centerline[-1]) offset by Range(-2, 2) @ 0 # at last stretch of centerline, off center by at most 2
 pos2 = (OrientedPoint at lane2.centerline[-1]) offset by Range(-2, 2) @ 0
 
+print("ego's position: ", lane1.uid)
+
+ego_maneuvers = filter(lambda i: i.type == ManeuverType.LEFT_TURN, lane1.maneuvers)
+egoManeuver = Uniform(*ego_maneuvers)
+turn = Uniform(*egoManeuver.conflictingManeuvers)
 
 # BEHAVIORS
 behavior actorCarBehavior():
-	print("ego's position: ", lane1.uid)
-	for i in lane1.maneuvers:
-		if i.type == ManeuverType.STRAIGHT: 
-			egoManeuver = i
-			break
-
-	turn = Uniform(*egoManeuver.conflictingManeuvers)
 	throttleStrength = Range(0.7, 1)
 	gain = 0.1
 	print("turn", turn)
@@ -63,10 +62,18 @@ behavior egoBehavior():
 		take SetThrottleAction(0.4) # hard coded for testing
 
 
+egoDestination = OrientedPoint on egoManeuver.endLane.centerline
+
+#egoStartPos = 
+
+# Constraint to force this stuff to work
+# Note: Precedence for > is tighter than `distance from`?
+#require (distance from egoStartPos to ego_maneuver.startLane.centerline[-1]) > 5
+#require (distance from egoStartPos to ego_maneuver.startLane.centerline[-1]) < 10
+
 # PLACEMENT
-ego = Car following roadDirection from pos1 by Range(-5, -3), # behind the position by at most 5
-	with speed 3,
-	with behavior egoBehavior
+ego = ApolloCar following roadDirection from pos1 by Range(-5, -3), # behind the position by at most 5
+	with behavior DriveTo(egoDestination)
 
 actorCar = Car following roadDirection from pos2 by Range(-5, -3),
 	with behavior actorCarBehavior,

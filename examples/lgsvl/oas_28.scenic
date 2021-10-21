@@ -3,7 +3,7 @@
 
 param map = localPath('maps/cubetown.xodr')
 param lgsvl_map = 'CubeTown'
-param time_step = 1.0/10
+param time_step = 1.0
 
 model scenic.simulators.lgsvl.model
 

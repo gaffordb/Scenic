@@ -2,13 +2,10 @@
 
 param map = localPath('maps/borregasave.xodr')
 param lgsvl_map = 'BorregasAve'
+param apolloHDMap = 'borregas_ave'
 param time_step = 1.0
 
 model scenic.simulators.lgsvl.model
-
-MAX_BREAK_THRESHOLD = 1
-TERMINATE_TIME = 20
-
 
 behavior EgoBehavior(target_speed=20, trajectory = None):
 	assert trajectory is not None
@@ -39,7 +36,7 @@ startLane = straight_maneuver.startLane
 connectingLane = straight_maneuver.connectingLane
 endLane = straight_maneuver.endLane
 
-centerlines = [startLane.centerline, connectingLane.centerline, endLane.centerline]
+#centerlines = [startLane.centerline, connectingLane.centerline, endLane.centerline]
 
 
 leftTurn_manuevers = []
@@ -52,13 +49,18 @@ L_startLane = leftTurn_maneuver.startLane
 L_connectingLane = leftTurn_maneuver.connectingLane
 L_endLane = leftTurn_maneuver.endLane
 
-L_centerlines = [L_startLane.centerline, L_connectingLane.centerline, L_endLane.centerline]
+L_centerlines = [L_startLane, L_connectingLane, L_endLane]
 
-ego = Car on startLane.centerline,
-		with blueprint 'vehicle.tesla.model3',
-		with behavior EgoBehavior(target_speed=15, trajectory=centerlines)
+#L_centerlines = [L_startLane.centerline, L_connectingLane.centerline, L_endLane.centerline]
 
-other = Car on L_startLane.centerline,
+egoDestination = OrientedPoint on road
+require egoDestination in road
+
+ego = ApolloCar on startLane,
+		with behavior DriveTo(egoDestination)
+
+other = Car on L_startLane,
 		with blueprint 'vehicle.tesla.model3',
-		with behavior FollowTrajectoryBehavior(target_speed=5, trajectory=L_centerlines)
+		#with behavior FollowTrajectoryBehavior(target_speed=5, trajectory=L_centerlines)
+		with behavior FollowLaneBehavior()
  

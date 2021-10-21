@@ -34,15 +34,18 @@ behavior CrossingBehavior():
 	while True:
 		egoDist = distance from ego to pt
 		walkDist = distance from p to pt
+		walkingDir = Uniform(90,-90) relative to roadDirection
+		take setWalkingDirection(walkingDir)
+
 		if (ego.speed == 0):
 			egoSpeed = 1
 		else:
 			egoSpeed = ego.speed
 		walkSpeed = randomSpeedup + ((egoSpeed * walkDist) / egoDist)
 		if(egoDist <= startWalkingDist):
-			take SetSpeedAction(30)
+			take setWalkingSpeed(walkSpeed)
 		else:
-			take SetSpeedAction(0.0)
+			take SetWalkingSpeed(0.0)
 
 behavior EgoBehavior():
 	brakeIntensity = Range(0.7, 1)
@@ -59,9 +62,11 @@ ego = ApolloCar at pos, facing roadDirection, with behavior DriveTo(egoDestinati
 # change this - crossings added
 # (using intersection boundary for LGSVL version since maps have no sidewalks)
 walkerSpawn = Point on visible intersection.boundary
+require walkerSpawn in turn.endLane
+# (try to get this to be on the turning lane every time...)
 p = Pedestrian at walkerSpawn offset by Range(-2,2) @ Range(-2,2),
 	facing toward pt,
-	with regionContainedIn None,
+	with regionContainedIn turn.endLane,
 	with behavior CrossingBehavior
 
 terminate when ego in turn.endLane

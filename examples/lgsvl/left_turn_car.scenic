@@ -18,16 +18,17 @@ ego_trajectory = [ego_maneuver.startLane, ego_maneuver.connectingLane, ego_maneu
 
 egoStartPos = OrientedPoint on ego_maneuver.startLane.centerline
 
-# Constraint to force this stuff to work
+# Constraint to make us start out of intersection (fails if we start w/in intersection)
 # Note: Precedence for > is tighter than `distance from`?
 require (distance from egoStartPos to ego_maneuver.startLane.centerline[-1]) > 5
-
 
 egoDestination = OrientedPoint on ego_maneuver.endLane
 require egoDestination in road
 
+# TODO get better traffic light control
 # setAllIntersectionTrafficLightsGreen()
 
 ego = ApolloCar at egoStartPos,
     with behavior DriveTo(egoDestination)
+
 

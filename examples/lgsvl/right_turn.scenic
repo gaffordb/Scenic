@@ -11,7 +11,7 @@ fourWayIntersection = filter(lambda i: i, network.intersections)
 intersec = Uniform(*fourWayIntersection)
 ego_startLane = Uniform(*intersec.incomingLanes)
 
-ego_maneuvers = filter(lambda i: i.type == ManeuverType.LEFT_TURN, ego_startLane.maneuvers)
+ego_maneuvers = filter(lambda i: i.type == ManeuverType.RIGHT_TURN, ego_startLane.maneuvers)
 ego_maneuver = Uniform(*ego_maneuvers)
 #ego_maneuver = Uniform(*ego_startLane.maneuvers)
 ego_trajectory = [ego_maneuver.startLane, ego_maneuver.connectingLane, ego_maneuver.endLane]

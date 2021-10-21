@@ -5,7 +5,7 @@ from scenic.simulators.lgsvl.simulator import LGSVLSimulator
 #from scenic.simulators.lgsvl.behaviors import *
 import matplotlib.pyplot as plt
 simulator LGSVLSimulator('BorregasAve')
-param time_step = 1.0/10
+param time_step = 1.0
 
 # CONSTANTS
 uberSpeed = Range(30, 50)

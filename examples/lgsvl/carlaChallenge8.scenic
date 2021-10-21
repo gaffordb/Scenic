@@ -5,26 +5,27 @@ The ego-vehicle is performing an unprotected left turn at an intersection, yield
 traffic.
 """
 
-## SET MAP AND MODEL (i.e. definitions of all referenceable vehicle types, road library, etc)
-param map = localPath('../../../tests/formats/opendrive/maps/CARLA/Town05.xodr')  # or other CARLA map that definitely works
-param carla_map = 'Town05'
-model scenic.simulators.carla.model
+param map = localPath('maps/borregasave.xodr')
+param lgsvl_map = 'BorregasAve'
+param apolloHDMap = 'borregas_ave'
+param time_step = 1.0
+
+model scenic.simulators.lgsvl.model
 
 ## CONSTANTS
-EGO_MODEL = "vehicle.lincoln.mkz2017"
 EGO_SPEED = 10
 SAFETY_DISTANCE = 20
 BRAKE_INTENSITY = 1.0
 
 ## MONITORS
-monitor TrafficLights:
-    freezeTrafficLights()
-    while True:
-        if withinDistanceToTrafficLight(ego, 100):
-            setClosestTrafficLightStatus(ego, "green")
-        if withinDistanceToTrafficLight(adversary, 100):
-            setClosestTrafficLightStatus(adversary, "green")
-        wait
+#monitor TrafficLights:
+#    freezeTrafficLights()
+#    while True:
+#        if withinDistanceToTrafficLight(ego, 100):
+#            setClosestTrafficLightStatus(ego, "green")
+#        if withinDistanceToTrafficLight(adversary, 100):
+#            setClosestTrafficLightStatus(adversary, "green")
+#        wait
 
 ## DEFINING BEHAVIORS
 behavior AdversaryBehavior(trajectory):
@@ -42,10 +43,10 @@ behavior EgoBehavior(speed, trajectory):
 # 'network' is the 'class Network' object in roads.py
 
 # The meaning of filter() function is explained in examples/carla/Carla_Challenge/carlaChallenge7.scenic
-fourWayIntersection = filter(lambda i: i.is4Way and i.isSignalized, network.intersections)
+fourWayIntersection = filter(lambda i: i.is4Way, network.intersections)
 
 # make sure to put '*' to uniformly randomly select from all elements of the list
-intersec = Uniform(*fourWayIntersection)
+intersec = Uniform(*network.intersections) # HACK for now to fix bug
 ego_start_lane = Uniform(*intersec.incomingLanes)
 
 # Get the ego manuever
@@ -67,10 +68,8 @@ adv_end_section = adv_maneuver.endLane.sections[0]
 ego_spawn_pt = OrientedPoint in ego_maneuver.startLane.centerline
 adv_spawn_pt = OrientedPoint in adv_maneuver.startLane.centerline
 
-ego = Car at ego_spawn_pt,
-    with blueprint EGO_MODEL,
-    with behavior EgoBehavior(EGO_SPEED, ego_trajectory)
-
+ego = ApolloCar at ego_spawn_pt,
+    with behavior DriveTo(OrientedPoint on ego_maneuver.endLane)
 adversary = Car at adv_spawn_pt,
     with behavior AdversaryBehavior(adv_trajectory)
 

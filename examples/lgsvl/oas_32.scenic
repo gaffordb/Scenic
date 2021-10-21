@@ -1,50 +1,71 @@
-# 3 way intersection. ego turns left. nothing else specified?
+# Ego does something at an intersection (left/right/straight)
+# cubetown
+# original file broken, looked like it was trying to do this
+# TODO: define behavior of other car
 
 param map = localPath('maps/cubetown.xodr')
 param lgsvl_map = 'CubeTown'
-param time_step = 1.0/10
+param apolloHDMap = 'cubetown'
+param time_step = 1.0
 
 model scenic.simulators.lgsvl.model
 
-fourLane = []
-for i in network.intersections:
-	if (len(i.incomingLanes) >= 8):
-		fourLane.append(i)
+fourWayIntersection = filter(lambda i: i, network.intersections)
 
-intersection = fourLane[0] # hard coded so I don't have to fix the double-sampling
-maneuvers = intersection.maneuvers
+intersec = Uniform(*fourWayIntersection)
 
-straight_manuevers = []
-for m in maneuvers:
-	if m.type == ManeuverType.STRAIGHT:
-		straight_manuevers.append(m)
+#### ----- Ego Vehicle Spec ----- ####
+ego_startLane = Uniform(*intersec.incomingLanes)
 
-straight_maneuver = straight_manuevers[0]
-startLane = straight_maneuver.startLane
-connectingLane = straight_maneuver.connectingLane
-endLane = straight_maneuver.endLane
+ego_maneuvers = ego_startLane.maneuvers
+ego_maneuver = Uniform(*ego_maneuvers)
+#ego_maneuver = Uniform(*ego_startLane.maneuvers)
+ego_trajectory = [ego_maneuver.startLane, ego_maneuver.connectingLane, ego_maneuver.endLane]
 
-centerlines = [startLane.centerline, connectingLane.centerline, endLane.centerline]
+egoStartPos = OrientedPoint on ego_maneuver.startLane.centerline
 
-
-leftTurn_manuevers = []
-for m in maneuvers:
-	if m.type == ManeuverType.LEFT_TURN:
-		leftTurn_manuevers.append(m)
-
-leftTurn_maneuver = leftTurn_manuevers[1]
-ego_L_startLane = leftTurn_maneuver.startLane
-ego_L_connectingLane = leftTurn_maneuver.connectingLane
-ego_L_endLane = leftTurn_maneuver.endLane
-
-ego_L_centerlines = [ego_L_startLane.centerline, ego_L_connectingLane.centerline, ego_L_endLane.centerline]
+# Constraint to force this stuff to work
+# Note: Precedence for > is tighter than `distance from`?
+require (distance from egoStartPos to ego_maneuver.startLane.centerline[-1]) > 5
+require (distance from egoStartPos to ego_maneuver.startLane.centerline[-1]) < 10
 
 
-# PLACEMENT
-ego = Car on ego_L_startLane.centerline,
-		with blueprint 'vehicle.tesla.model3',
-		with behavior FollowTrajectoryBehavior(target_speed=10, trajectory=ego_L_centerlines)
+egoDestination = OrientedPoint on ego_maneuver.endLane
+require egoDestination in road
 
-other = Car on startLane.centerline,
-		with blueprint 'vehicle.tesla.model3',
-		with behavior FollowTrajectoryBehavior(target_speed=15, trajectory=centerlines)
+ego = ApolloCar at egoStartPos,
+             with behavior DriveTo(egoDestination)
+
+#### ----- NPC Vehicle Spec ----- ####
+npc_startLane = Uniform(*intersec.incomingLanes)
+
+npc_maneuvers = npc_startLane.maneuvers
+npc_maneuver = Uniform(*npc_maneuvers)
+npc_trajectory = [npc_maneuver.startLane, npc_maneuver.connectingLane, npc_maneuver.endLane]
+
+npcStartPos = OrientedPoint on npc_maneuver.startLane.centerline
+
+# Constraint to force this stuff to work
+# Note: Precedence for > is tighter than `distance from`?
+require (distance from npcStartPos to npc_maneuver.startLane.centerline[-1]) > 5
+require (distance from npcStartPos to npc_maneuver.startLane.centerline[-1]) < 10
+
+npcDestination = OrientedPoint on npc_maneuver.endLane
+require npcDestination in road
+
+#other = Car on npc_maneuver.startLane.centerline,
+#		with behavior FollowTrajectoryBehavior(target_speed=15, trajectory=npc_trajectory)
+
+other = Car on npc_maneuver.startLane.centerline,
+		with behavior FollowLaneBehavior(target_speed=15)
+
+behavior ApproachAndTurnLeft():
+    try:
+        do FollowLaneBehavior()
+    interrupt when (distance from self to intersection) < 10:
+        abort    # cancel lane following
+    do WaitForTrafficLightBehavior()
+    do TurnLeftBehavior()
+
+#npc = NPCCar at npcStartPos,
+#          with behavior FollowWaypoints(waypoints)
